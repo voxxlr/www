@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>Account</title>
+    <link rel="shortcut icon" href="https://voxxlr.github.io/www/favicon.ico" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://voxxlr.github.io/app/ui.css">
+
+    <script src="https://voxxlr.github.io/app/ui.js"></script>
+    <script src="https://voxxlr.github.io/www/va-account.js"></script>    
+    
+    <style>
+            
+        body 
+        { 
+            height: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding-top: 20px;
+        }
+        
+        body > div
+        {
+            display: inline-grid;
+            grid-gap: 40px 40px;
+            grid-auto-columns: 40em 30em;
+        }
+        
+        ui-section:nth-of-type(1) { grid-column-start: 1; }
+        ui-section:nth-of-type(2) 
+        { 
+            grid-column-start: 1;
+            max-height: 30em;
+            overflow: auto; 
+        }
+        ui-section:nth-of-type(3) { grid-column-start: 2; grid-row-start: 1; }
+        ui-section:nth-of-type(4) { grid-column-start: 2; grid-row-start: 2;}
+    
+        ui-section
+        {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .copy
+        {
+            flex: 1;					
+            position: relative;
+            background-color: var(--primary-transparent);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5em;
+            margin-left: 1em;
+        }
+
+        .copy > span
+        {
+            white-space: nowrap;
+            height: 1.2em;
+            font-size: 1.0em;
+        }
+            
+    </style>  
+     
+    <script>
+    
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        window.addEventListener("load", async (event) => 
+        {
+            document.querySelector("ui-section button").addEventListener("click", (event) => 
+            {
+                document.querySelector("ui-modal").hidden = false;
+            });
+            
+            document.querySelector("ui-modal button").addEventListener("click", (event)=>
+            {
+                fetch('https://www.voxxlr.com/account', 
+                { 
+                    method: 'DELETE', 
+                    headers: new Headers({
+                     'Authorization': `Bearer {{{token}}}`
+                    })
+                
+                }).then(async (response) => 
+                {
+                    document.querySelector("ui-modal").hidden = true;
+                    if (window.parent)
+                    {
+                        window.parent.postMessage({ action: 'logout' }, "*" );
+                    }
+                    else
+                    {
+                        window.sessionStorage.removeItem("voxxlr");
+                        window.location = "https://www.voxxlr.com/index.html";
+                    }
+                });
+            });
+            
+            document.querySelector(".copy").addEventListener("click", event=>
+            {
+                navigator.clipboard.writeText(event.currentTarget.querySelector("span").textContent)
+            });
+        });
+    
+    </script>
+</head>
+
+
+<body>
+    <div>
+        <ui-section label="Utilization">
+            <va-utilization meter='{{{meter}}}'></va-utilization>
+        </ui-section>
+                
+        <ui-section label="Messages">
+            <va-messages {{#messages}} list='{{{messages}}}' {{/messages}} token="{{{token}}}"></va-messages> 				
+        </ui-section>
+
+        <ui-section label="Account">
+            <p>Deleting the account will result in the removal of all content and the cancellation of your subscription. If applicable, a final Invoice may be issued</p>
+            <button class="vx-secondary" {{^owner}}disabled{{/owner}}><span>Delete Account</span></button>
+        </ui-section>
+        <ui-section label="Api Keys">
+            <div class="copy">
+                <span>{{{key}}}</span>
+                <ui-tooltip hidden>
+                    <p>Click to copy the Api key</p>
+                </ui-tooltip>
+            </div>
+            <div class="flex:1"></div>
+        </ui-section>
+        
+        <ui-section label="Members">
+            <va-users members='{{{members}}}' account="{{email}}" token="{{{token}}}"></va-users>
+        </ui-section>
+        
+    </div>	  	
+    
+    <ui-modal hidden close>
+        <div>
+            <p>Are you certain ? This cannot be undone. </p>
+        </div>
+        <div>
+            <button class="vx-secondary"  type="button"><span>Yes</span></button>
+        </div>
+    </ui-modal>	
+
+</body>
+
+</html>

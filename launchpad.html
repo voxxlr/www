@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>Launchpad</title>
+    <link rel="shortcut icon" href="https://voxxlr.github.io/www/favicon.ico" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://voxxlr.github.io/app/ui.css">
+
+    <script src="https://voxxlr.github.io/app/ui.js"></script>
+     
+    <style>
+    
+        :root 
+        {
+            --management-app: #0075FF;
+            --presentation-app: #ffcc00;
+            --productivity-app: #00cc33;
+            --labs-app: #cc3300;
+            --background: #F8F8FE;
+        }
+    
+        
+        body 
+        { 
+            height: 100%;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            background: var(--background);
+        }
+
+        main 
+        { 
+            display: flex;
+            flex-direction: column;
+            background: #F8F8FE;
+            padding-top: 2em;
+        }
+        
+        .category 
+        { 
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            margin: 1em;
+            padding-bottom: 2em;
+        }
+        .category:last-child { margin-bottom: 20em; }
+        
+        .title 
+        {
+            margin-left: 1.5em;
+            color: var(--border) 
+        }
+        
+        .app 
+        { 
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 15em;
+            height: 8em;
+            margin: 0.5em; 
+            border: 1px outset var(--border);
+            background: white;
+            box-sizing: border-box;
+        }
+        
+        .app i { margin-top: 0.5em; }
+        
+        .app ui-checkbox 
+        {
+            position: absolute;
+            top: 0.3em;
+            right: 0.3em;
+            width: 30px;
+            height: 30px;
+            font-size: 2em;
+        }
+        
+        div.category.management	.app { color: var(--management-app) }
+        div.category.management	.app:hover { border: 2px outset var(--management-app); }
+        main[edit] div.category.management	.app:hover { border: 2px outset var(--primary); }
+        
+        div.category.presentation .app { color: var(--presentation-app) }
+        div.category.presentation .app:hover { border: 2px outset var(--presentation-app); }
+        main[edit] div.category.presentation .app:hover { border: 2px outset var(--primary); }
+        
+        div.category.productivity .app { color: var(--productivity-app) }
+        div.category.productivity .app:hover { border: 2px outset var(--productivity-app); }
+        main[edit] div.category.productivity .app:hover { border: 2px outset var(--primary); }
+        
+        div.category.labs .app { color: var(--labs-app) }
+        div.category.labs .app:hover { border: 2px outset var(--labs-app); }
+        main[edit] div.category.labs .app:hover  { border: 2px outset var(--primary); }		
+    
+        main:not([edit]) .app > ui-checkbox { visibility: hidden }
+        main[edit] .app  { border: 2px outset var(--primary); }
+        main[edit] .app:hover  { border: 2px outset var(--primary); }
+
+        aside { padding: 1em; }
+        aside.left 
+        { 
+            flex-grow: 1; 
+            max-width: 20em;
+            min-width: 10em;
+        }
+        aside.left > button 
+        {
+            width: 100%;
+        }
+        aside.left > button:not(:first-child)
+        {
+            margin-top: 1em;
+        }
+        
+        aside.right { flex-grow: 1; }
+        
+        ui-tooltip  { max-width: 18em; }
+        ui-tooltip i { margin-right: 0.5em; }
+        
+        
+        #install 
+        {
+            flex-direction: column;
+        }
+        
+        #install .appdetails 
+        {
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            row-gap: 0.5em;
+            max-width: 375em; 
+        }
+        
+        #install button[name='install'] { width: 100%; margin-top: 1.5em }
+        #install label { display: flex; } 
+        #install label > span 
+        { 
+            display: inline-block;
+            width: 9em; 
+        }		
+        #install label > input, #install label > ui-dropdown-select { flex: 1; } 
+        #install .url
+        {
+            flex: 1;					
+            background-color: var(--primary-transparent);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5em;
+            font-weight: bold;
+        }
+        
+        #install .appstore 
+        { 
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 2em;
+            max-width: 36em; 
+        }
+        #install .appstore i 
+        {
+            margin: 0.1em;
+            padding: 0.1em;
+        }
+        
+        #install .appstore .app 
+        { 
+            border: 1px outset var(--border);
+            background: white;
+            box-sizing: border-box;
+            width: 5em;
+            height: 5em;
+            opacity: 0.5;
+        }
+        
+         
+        #install .app.management { color: var(--management-app) }
+        #install .app.management:hover { border: 2px outset var(--management-app); opacity: 1.0; }
+        
+        #install .app.presentation { color: var(--presentation-app) }
+        #install .app.presentation:hover { border: 2px outset var(--presentation-app);  opacity: 1.0; }
+        
+        #install .app.productivity { color: var(--productivity-app) }
+        #install .app.productivity:hover { border: 2px outset var(--productivity-app); opacity: 1.0; }
+        
+        #install .app.labs { color: var(--labs-app) }
+        #install .app.labs:hover { border: 2px outset var(--labs-app);  opacity: 1.0;}
+        
+    </style>  
+     
+    <script>
+    
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        window.addEventListener("load", (event) => 
+        {
+            document.addEventListener("contextmenu", (e) => { e.preventDefault(); }, false);
+            
+            //const params = new URLSearchParams(window.location.search);
+            //let selectedDocument = params.get("document");
+
+            document.querySelectorAll("main .app").forEach(panel => 
+            {
+                panel.addEventListener("click", event =>
+                {
+                    if (!document.querySelector("main").hasAttribute("edit"))
+                    {
+                        window.parent.postMessage({ action: "load-app", app: event.currentTarget.getAttribute("data-name") }, "*");
+                    }
+                });
+            });
+            
+            let timer = null;
+            document.querySelectorAll(".app").forEach(item => item.addEventListener("mouseenter", event =>
+            {
+                if (timer)
+                {
+                    clearTimeout(timer);				
+                }
+
+                let div = event.currentTarget.querySelector(".description"); 
+                if (div)
+                {
+                    timer = setTimeout(() => 
+                    {
+                        document.querySelectorAll(".description").forEach(item => item.hidden=true);
+                        div.hidden = false;
+                        timer = null;
+                    }, 700);
+                
+                }
+            }));
+            
+            document.querySelectorAll(".app").forEach(item => item.addEventListener("mouseleave", event =>
+            {
+                if (timer)
+                {
+                    clearTimeout(timer);				
+                }
+                
+                let div = event.currentTarget.querySelector(".description"); 
+                if (div)
+                {
+                    div.hidden = true;
+                }
+            }));
+
+            //
+            // edit lauchpad
+            //
+                
+            let manifest;
+                
+            document.querySelector("button[name='edit']").addEventListener("click", event =>
+            {
+                let active = event.currentTarget.toggleAttribute("active");
+                document.querySelector("main").toggleAttribute("edit", active);
+                document.querySelector("button[name='save']").toggleAttribute("hidden", !active);
+                document.querySelector("button[name='add']").toggleAttribute("hidden", !active);
+                
+                fetch(`https://www.voxxlr.com/manifest`, 
+                { 
+                    method: 'GET', 
+                    headers: new Headers({ 'Authorization': "Bearer {{{token}}}" })
+                }).then(async (response) => 
+                {
+                    manifest = await response.json()
+                });
+            });
+            
+            document.querySelector("button[name='save']").addEventListener("click", event =>
+            {
+                for (var id in manifest)
+                {
+                    let category = document.querySelector(`.category.${id}`);
+
+                    let newApps = [];
+                    for (var i=0; i<manifest[id].apps.length; i++)
+                    {
+                        let app = manifest[id].apps[i];
+                        
+                        let checkbox = category.querySelector(`main .app[data-name="${app.name}"] ui-checkbox`);
+                        if (checkbox.hasAttribute("checked"))
+                        {
+                            newApps.push(app);
+                        }
+                    }
+                    manifest[id].apps = newApps;
+                }
+                
+                fetch(`https://www.voxxlr.com/manifest`, 
+                { 
+                    method: 'POST', 
+                    headers: new Headers({
+                     'Authorization': "Bearer {{{token}}}", 
+                     'Content-Type': "application/json"
+                    }),
+                    body: JSON.stringify(manifest)
+                }).then(async (response) => 
+                {
+                    manifest = await response.json()			  		
+                    window.parent.postMessage({ action: "load-manifest", manifest }, "*");
+                    location.reload();
+                });
+            });
+            
+            document.querySelector("button[name='add']").addEventListener("click", event =>
+            {
+                document.querySelector("#install").hidden = false;
+            });
+    
+            document.querySelector("#install button[name='install']").addEventListener("click", event =>
+            {
+                document.querySelector("#install").hidden = true;
+                
+                let app = 
+                {
+                        url: document.querySelector("#install .url").value,
+                        name: document.querySelector("#install .name").value,
+                        icon: document.querySelector("#install .icon").value,
+                        title: document.querySelector("#install .desc").value,
+                        document: document.querySelector("#install .document").hasAttribute("checked"),
+                        tags: document.querySelector("#install .tags").hasAttribute("checked"),
+                        tooltip: document.querySelector("#install .tooltip").value,
+                        data : { tags: [] }
+                }
+                
+                let category = document.querySelector("#install ui-dropdown-select").getAttribute("value");
+                
+                let apps = manifest[category].apps;
+                let i=0;
+                for (; i<apps.length; i++)
+                {
+                    if (apps[i].name == app.name)
+                    {
+                        apps[i] = app;
+                        break;
+                    }
+                }
+                
+                if (i == apps.length)
+                {
+                    apps.push(app);		  			
+
+                    let template = document.querySelector("#template1");
+                    let entry = template.content.cloneNode(true);
+                    entry.querySelector(".app").setAttribute("data-name", app.name);
+                    entry.querySelector("i").classList.add(app.icon);
+                    entry.querySelector("p").textContent = app.title;
+                    entry.querySelector("ui-tooltip").innerHTML = app.tooltip;
+                    document.querySelector(`main .category.${category}`).appendChild(entry);
+                }
+                else
+                {
+                    document.querySelector("ui-snackbar").show("App already installed")	
+                }
+            });
+            
+            document.querySelectorAll(".appstore .app").forEach(panel => 
+            {
+                panel.addEventListener("click", event =>
+                {
+                    document.querySelector("#install .url").value = event.currentTarget.getAttribute("data-url");
+                    document.querySelector("#install .name").value = event.currentTarget.getAttribute("data-name");
+                    document.querySelector("#install .icon").value = event.currentTarget.getAttribute("data-icon");
+                    document.querySelector("#install .desc").value = event.currentTarget.getAttribute("data-title");
+                    
+                    document.querySelector("#install .document").toggleAttribute("checked", event.currentTarget.getAttribute("data-document") === "true");
+                    document.querySelector("#install .tags").toggleAttribute("checked", event.currentTarget.getAttribute("data-tags") === "true");
+                    document.querySelector("#install .tooltip").value = event.currentTarget.getAttribute("data-tooltip");
+                });
+            });
+            
+        });
+
+    
+    </script>
+</head>
+
+<body>
+
+    <template id="template1">
+        <div class="app">
+            <i class="fas fa-3x"></i>
+            <p></p>
+            <ui-tooltip hidden>
+            </ui-tooltip>				
+            <ui-checkbox checked></ui-checkbox>
+        </div>
+    </template>
+
+    <aside class="left">
+        <div>
+            <button name="edit" class="vx-secondary vx-tool">
+                <i class="fas fa-2x fa-edit"></i>
+                <ui-tooltip hidden>
+                    <p>Edit Launchpad</p>
+                </ui-tooltip>	
+            </button>
+            <button name="add" class="vx-secondary vx-tool" hidden>
+                <i class="fas fa-2x fa-plus"></i>
+                <ui-tooltip hidden>
+                    <p>Add App</p>
+                </ui-tooltip>	
+            </button>
+            <button name="save" class="vx-secondary vx-tool" hidden>
+                <i class="fas fa-2x fa-save"></i> 
+                <ui-tooltip hidden>
+                    <p>Save Launchpad</p>
+                </ui-tooltip>	
+            </button>
+        </div>
+    </aside>
+
+    <main>
+        {{#manifest}}
+
+            {{#management}}
+            <div class="title">Data Management</div>
+            <div class="category management">
+                {{#apps}}
+                <div class="app" data-name="{{name}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <p>{{title}}</p>
+                    <ui-tooltip hidden>
+                        {{{tooltip}}}
+                    </ui-tooltip>
+                    <ui-checkbox checked></ui-checkbox>
+                </div>
+                {{/apps}}
+            </div>
+            {{/management}}
+            
+            {{#presentation}}
+            <div class="title">Presentation</div>
+            <div class="category presentation">
+                {{#apps}}
+                <div class="app" data-name="{{name}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <p>{{title}}</p>
+                    <ui-tooltip hidden>
+                        {{{tooltip}}}
+                    </ui-tooltip>				
+                    <ui-checkbox checked></ui-checkbox>
+                </div>
+                {{/apps}}
+            </div>
+            {{/presentation}}
+        
+            {{#productivity}}
+            <div class="title">Productivity</div>
+            <div class="category productivity">
+                {{#apps}}
+                <div class="app" data-name="{{name}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <p>{{title}}</p>
+                    <ui-tooltip hidden>
+                        {{{tooltip}}}
+                    </ui-tooltip>				
+                    <ui-checkbox checked></ui-checkbox>
+                </div>
+                {{/apps}}
+            </div>
+            {{/productivity}}
+            
+            {{#labs}}
+            <div class="title">Labs</div>
+            <div class="category labs">
+                {{#apps}}
+                <div class="app" data-name="{{name}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <p>{{title}}</p>
+                    <ui-tooltip hidden>
+                        {{{tooltip}}}
+                    </ui-tooltip>				
+                    <ui-checkbox checked></ui-checkbox>
+                </div>
+                {{/apps}}
+            </div>
+            {{/labs}}
+            
+        {{/manifest}}
+        
+        <ui-snackbar>
+        </ui-snackbar>
+    </main>
+    
+    <aside class="right">
+    </aside>
+    
+    <ui-modal id="install" hidden close>
+        <div class="appstore">
+        {{#appstore}}
+    
+            {{#management}}
+                {{#apps}}
+                <div class="app management" data-name="{{name}}" data-icon="{{icon}}" data-url="{{url}}" data-title="{{title}}" data-tooltip="{{{tooltip}}}" data-document="{{document}}" data-tags="{{tags}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <ui-tooltip hidden>
+                        <p>{{title}}</p>
+                    </ui-tooltip>				
+                </div>
+                {{/apps}}
+            {{/management}}
+            
+            {{#presentation}}
+                {{#apps}}
+                <div class="app presentation" data-name="{{name}}" data-icon="{{icon}}" data-url="{{url}}" data-title="{{title}}" data-tooltip="{{{tooltip}}}" data-document="{{document}}" data-tags="{{tags}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <ui-tooltip hidden>
+                        <p>{{title}}</p>
+                    </ui-tooltip>				
+                </div>
+                {{/apps}}
+            {{/presentation}}
+        
+            {{#productivity}}
+                {{#apps}}
+                <div class="app productivity" data-name="{{name}}" data-icon="{{icon}}" data-url="{{url}}" data-title="{{title}}" data-tooltip="{{{tooltip}}}" data-document="{{document}}" data-tags="{{tags}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <ui-tooltip hidden>
+                        <p>{{title}}</p>
+                    </ui-tooltip>				
+                </div>
+                {{/apps}}
+            {{/productivity}}
+            
+            {{#labs}}
+                {{#apps}}
+                <div class="app labs" data-name="{{name}}" data-icon="{{icon}}" data-url="{{url}}" data-title="{{title}}" data-tooltip="{{{tooltip}}}" data-document="{{document}}" data-tags="{{tags}}">
+                    <i class="fas fa-3x {{icon}}"></i>
+                    <ui-tooltip hidden>
+                        <p>{{title}}</p>
+                    </ui-tooltip>				
+                </div>
+                {{/apps}}
+            {{/labs}}
+            
+            <div class="app labs" style="margin: auto" data-name="template" data-icon="fa-flask" data-url="https://voxxlr.github.io/template/" data-title="App Template" data-tooltip="<p>This tooltip will appear in the launchpad</p>" data-document="true" data-tags="true">
+                <i class="fas fa-3x fa-flask"></i>
+                <ui-tooltip hidden>
+                    <p>App Template</p>
+                </ui-tooltip>				
+            </div>
+            
+        {{/appstore}}
+        </div>
+        <div class="appdetails">
+            <label>
+                <span>URL</span>
+                <input class="url" value="https://voxxlr.github.io/app-template/"></input>
+            </label>
+            <label>
+                <span>Name</span>
+                <input class="name" value="template"></input>
+            </label>
+            <label>
+                <span>Category</span>
+                <ui-dropdown-select>
+                    <ui-option value="management">Management</ui-option>
+                    <ui-option value="presentation">Presentation</ui-option>
+                    <ui-option value="productivity">Productivity</ui-option>
+                    <ui-option value="labs" selected>Labs</ui-option>
+                </ui-dropdown-select>
+            </label>
+            <label>
+                <span>Title</span>
+                <input class="desc" value="App Template"></input>
+            </label>
+            <label>
+                <span>Tooltip</span>
+                <textarea class="tooltip" rows="4" cols="54"><p>This tooltip will appear in the launchpad</p></textarea>
+            </label>
+            <label>
+                <span>Fontawsome Icon</span>
+                <input class="icon" type="text" value="fa-flask"></input>
+            </label>
+            <label>
+                <span>Tags access</span>
+                <ui-checkbox class="tags" checked></ui-checkbox>
+            </label>
+            <label>
+                <span>Initial document</span>
+                <ui-checkbox class="document" checked></ui-checkbox>
+            </label>
+        </div>
+        <div>
+            <button name="install" class="vx-primary"><span>Install Now...</span></button>
+        </div>
+    </ui-modal>	
+    
+</body>
+
+</html>
+            

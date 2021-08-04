@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content = "initial-scale = 1.0,minimum-scale=1.0,user-scalable = no, width=device-width"/>
+    <title>Voxxlr - a cloud platform for GIS and BIM</title>
+    <link rel="shortcut icon" href="https://voxxlr.github.io/www/favicon.ico" />
+ 
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://voxxlr.github.io/app/ui.css">
+    
+    <script src="https://voxxlr.github.io/app/ui.js"></script>
+    <script src="https://voxxlr.github.io/app/vx-viewer.js"></script>
+    <script src="https://voxxlr.github.io/app/vx-inventory.js"></script>
+    
+    <script src="https://voxxlr.github.io/www/va-login.js"></script>
+    <script src="https://voxxlr.github.io/www/va-menu.js"></script>
+    <script src="https://voxxlr.github.io/www/va-links.js"></script>
+        
+    <style>
+
+        body { overflow: hidden; height:100vh; width: 100vw; user-select: none; margin: 0;}
+        
+        header
+        {
+            position: absolute; 
+            top: 0px; 
+            left: 10px; 
+            right: 10px; 
+            height: 40px; 
+            display: flex;
+            flex-direction:row;
+            align-items: center;
+            border-bottom: solid 1px var(--border);
+        }
+            
+        main
+        {
+            position: absolute; 
+            top: 40px; 
+            left: 0px; 
+            right: 0px; 
+            bottom: 0px;
+        }
+            
+        iframe
+        {
+            width: 100%; 
+            height: 100%; 
+            border: none;
+        }
+                   
+        button
+        {
+            background: var(--primary);
+            color: white;		
+        }
+        button i { margin-right: 1em; }
+        va-menu { z-index: 1000; margin-left: 2em; }
+        va-settings { z-index: 999; }
+            
+        va-links { height: 80vh; width: 80vw; }	
+        
+        #title 
+        { 
+            text-align: left; 
+            align-items: center;
+            font-size: 1.0em;
+            color: var(--primary);
+            display: flex;
+            justify-content: center;
+        }
+        #title i  { cursor: pointer; }
+        #title span 
+        { 
+            margin-left: 1em;
+            font-weight: bold;
+        }
+        
+        #status 
+        { 
+            flex: 1;
+            text-align: center; 
+            color: var(--primary); 
+            font-style: italic;
+        }
+        
+        
+    </style>
+       
+    <script>
+    
+    
+        window.MANIFESTS = {}
+        {
+            let categories = JSON.parse(`{{{manifest}}}`);
+            for (var id in categories)
+            {
+                categories[id]["apps"].forEach(app =>
+                {
+                    app.category = id;
+                    window.MANIFESTS[app.name] = app;
+                });
+            }
+        }
+   
+        window.addEventListener("load", function(event) 
+        {
+            let iframe = document.querySelector("iframe");
+            iframe.src = `https://www.voxxlr.com/launchpad.html?token=${encodeURIComponent("{{{token}}}")}`;
+            
+                        
+            //
+            // menu events
+            //
+            let login = document.querySelector("va-login");
+            login.addEventListener("logout", async (event) =>
+            {
+                window.location = "https://www.voxxlr.com";
+            })
+            login.init();        	
+            
+            document.querySelector("header button[name='links']").addEventListener("click", async event => {document.getElementById("links-dialog").hidden = false; });
+            
+            //
+            // 
+            //
+            let links = document.querySelector("va-links");
+            document.getElementById("links-dialog").addEventListener("close", event=>
+            {
+                links.reset();
+            });
+                    
+            //
+            // 
+            //
+            let selectedDocument = null;
+    
+            let loadApp = (app) =>
+            {
+                if (app === "voxxlr/inspect")
+                {
+                    iframe.src = "https://app.voxxlr.com/1620825035265";    			
+                    document.querySelector("header button[name='links']").hidden = true;
+                }
+                else
+                {
+                    document.querySelector("va-links").setAttribute("app", app);
+                    
+                    let manifest = MANIFESTS[app];
+                    document.querySelector("header button[name='links']").hidden = false;
+                    document.querySelector("#title i").setAttribute("class", `fas ${manifest.icon}`);
+                    document.querySelector("#title span").textContent = manifest.title;	
+                    
+                    let url = `https://app.voxxlr.com/app/${app}?token=${encodeURIComponent("{{{token}}}")}`;
+                    if (manifest.document)
+                    {
+                        if (selectedDocument)
+                        {
+                            let compatible = true;
+                            
+                            if (manifest.data.type)
+                            {
+                                compatible = manifest.data.type == selectedDocument.type;	        				
+                            }
+                            
+                            for (var i=0; i<manifest.data.tags.length; i++)
+                            {
+                                if (!selectedDocument.tags.includes(manifest.data.tags[i]))
+                                {
+                                    compatible = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (compatible)
+                            {
+                                url += `&document=${encodeURIComponent(selectedDocument.token)}`				
+                            }
+                        }
+                    }
+                    iframe.src = url;    		
+                }
+            }
+            
+            let settings = document.querySelector("va-settings");
+            settings.addEventListener("open-page", event=>
+            {
+                document.querySelector("header button[name='links']").hidden = true;
+                document.querySelector("#title i").setAttribute("class", `${event.detail.icon}`);
+                document.querySelector("#title span").textContent = event.detail.name;	
+                iframe.src = event.detail.href;
+            });
+            settings.addEventListener("logout", event => { login.logout(); });
+            
+            let menu = document.querySelector("va-menu");
+            menu.addEventListener("load-app", event=> { loadApp(event.detail.app) });
+            menu.addEventListener("load-launchpad", event=>
+            {
+                document.querySelector("header button[name='links']").hidden = false;
+                document.querySelector("#title i").setAttribute("class", "fas fa-rocket");
+                document.querySelector("#title span").textContent = "Launchpad";	
+                let url = `https://www.voxxlr.com/launchpad.html?token=${encodeURIComponent("{{{token}}}")}`;
+                if (selectedDocument)
+                {
+                    url += `&document=${encodeURIComponent(selectedDocument.token)}`;
+                }
+                iframe.src = url;
+            });
+            
+            // messages coming from launchpad.html.
+            window.addEventListener("message", async (event) =>
+            {
+                //if (event.source === iframe.contentWindow)
+                {
+                    if (event.data.action == "load-app")
+                    {
+                        loadApp(event.data.app)
+                    }
+                    else if (event.data.action == "dataset-load")
+                    {
+                        selectedDocument = event.data.dataset;
+                    }
+                    else if (event.data.action == "load-manifest")
+                    {
+                        window.MANIFESTS = {}
+                        let categories = event.data.manifest;
+                        for (var id in event.data.manifest)
+                        {
+                            event.data.manifest[id]["apps"].forEach(app =>
+                            {
+                                app.category = id;
+                                window.MANIFESTS[app.name] = app;
+                            });
+                        }
+                        menu.setManifest(window.MANIFESTS);
+                    }
+                }
+            });
+            
+            menu.setManifest(window.MANIFESTS);
+        });
+
+    </script>
+     
+</head>
+<body>
+    <header>
+        <div id="title"><i class="fas fa-rocket"></i><span id="page">Launchpad</span></div>
+        <div id="status"></div>
+        <div>
+            <button name="links" class="vx-primary"><i class="fas fa-share-alt"></i><span>Share App</span></button>
+        </div>
+        <va-menu left></va-menu>
+        <va-settings token="{{{token}}}" left></va-settings>
+    </header>
+    <main>
+        <iframe src=""></iframe>
+    </main>
+    <ui-modal id="login-dialog" hidden close>
+        <va-login></va-login>
+    </ui-modal>
+    
+    <ui-modal id="links-dialog" hidden close>
+        <va-links token="{{{token}}}" app="voxxlr/upload"></va-links>
+    </ui-modal>
+</body>
+

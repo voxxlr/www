@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Billing</title>
+ 
+    <link rel="shortcut icon" href="https://voxxlr.github.io/www/favicon.ico" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://voxxlr.github.io/app/ui.css">
+
+    <script src="https://voxxlr.github.io/app/ui.js"></script>
+    
+    <script src="https://voxxlr.github.io/www/va-account.js"></script>    
+    
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <style>
+
+        body 
+        { 
+            height: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding-top: 20px;
+        }
+        
+        body > div
+        {
+            display: inline-grid;
+            grid-gap: 40px 40px;
+            grid-auto-columns: auto;
+        }
+        
+        #tier0 { grid-column-start: 1; }
+        #tier1 { grid-column-start: 2; }
+        #tier2 { grid-column-start: 3; }
+        #usage { grid-column-start: 1;  grid-column-end: 3;}
+        #card { grid-column-start: 3; }
+        
+        
+        div[hidden] { display: none }
+         
+            
+        .plan
+        {
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            flex-basis: 33%;
+            flex-grow: 0;	
+            margin-top: 0;	
+            border: 1px solid var(--border);
+        }
+        .plan > div { margin-bottom: 3.5em; }
+            
+        .billed 
+        { 
+            margin-top: 0.5em; 
+            text-align: center;
+            color: var(--border)
+        }
+        
+        .description 
+        {
+            text-align: center;
+            margin-left: 1em;
+            margin-right: 1em;
+        }
+        
+        ui-section > p
+        {
+            margin: 0;
+            font-size: 68px;
+            font-weight: 700;
+            line-height: 1;			
+            color: 	var(--primary-transparent);	
+            text-align: center;
+            margin-top: 0.5em;
+        }
+            
+        footer { text-align: center; }
+            
+        ui-section[selected] { border: 2px solid var(--primary); } 	
+        ui-section[selected] > p {  color: var(--primary); } 	
+        ui-section[selected] > footer > button  { display: none }
+        ui-section:not([selected]) > footer > p  { display: none } 
+
+        footer p 
+        {
+            color: var(--primary);
+            font-style: italic;
+            margin: 0;
+        }	
+        
+        #confirm p
+        {
+            width: 30em;
+        }				
+            
+    </style>  
+     
+    <script>
+    
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        window.addEventListener("load", async (event) => 
+        {
+            let plans = {{{plans}}};
+            let user = {{{subscription}}};
+
+            function format(mb)
+            {
+                if (mb >= 1024*1024)
+                {
+                    return `${mb/(1024*1024)} TB`;
+                }
+                else
+                {
+                    return `${mb/1024} GB`;			
+                }
+            }
+            
+            for (var p in plans)
+            {
+                let panel = document.getElementById(p);
+                panel.querySelector(".storage").textContent = format(plans[p].storage);
+                if (plans[p].tiers)
+                {
+                    panel.querySelector(".price").textContent = plans[p].tiers[0].flat_amount/100;
+                }
+                else
+                {
+                    panel.querySelector(".price").textContent = plans[p].unit_amount/100;
+                }
+                panel.querySelector(".bandwidth").textContent = format(plans[p].bandwidth);
+            }
+            
+            if (user.price)
+            {
+                document.getElementById(user.price.name).toggleAttribute("selected", true);
+            }
+            
+            let changePrice = (plan) =>
+            {
+                document.querySelector("ui-modal").hidden = false;
+                fetch('https://www.voxxlr.com/payment/subscribe', 
+                { 
+                    method: 'POST', 
+                    headers: new Headers({
+                        'Authorization': `Bearer {{{token}}}`,
+                        'Accept': 'application/json',
+                    }),
+                    body: JSON.stringify({ price: plans[plan].id })
+                }).then(async (response) => 
+                {
+                    if (response.ok)
+                    {
+                        let meter = await response.json();
+                        
+                        let selected = document.querySelector("ui-section[selected]");
+                        if (selected)
+                        {
+                            selected.toggleAttribute("selected", false);
+                        }
+                        document.getElementById(plan).toggleAttribute("selected", true);
+                        
+                        document.querySelector("va-utilization").setAttribute("meter", JSON.stringify(meter));
+                        document.querySelector("ui-modal").hidden = true;
+                     }
+                });
+            }
+            
+            document.querySelectorAll("footer button").forEach(item=>
+            {
+                item.addEventListener("click", async (event) =>
+                {
+                    let plan = event.currentTarget.closest("ui-section").id;
+                    
+                    let card = document.querySelector("va-card");
+                    if (!card.hasAttribute("card"))
+                    {
+                        card.open();
+                        card.addEventListener("card-changed", event =>
+                        {
+                            changePrice(plan);
+                        });
+                    }
+                    else
+                    {
+                        // upgrade or downgade
+                        let dialog = document.getElementById("confirm");
+                        dialog.hidden = false;
+                        dialog.plan = plan;
+                    }
+                });
+            });
+            
+            document.querySelector("body > div").toggleAttribute("hidden", false);
+            
+            document.querySelector("#confirm button[name='confirm']").addEventListener("click", event =>
+            {
+                let dialog = document.getElementById("confirm");
+                dialog.hidden = true;
+                
+                changePrice(dialog.plan);
+            });
+            document.querySelector("#confirm button[name='cancel']").addEventListener("click", event =>
+            {
+                let dialog = document.getElementById("confirm");
+                dialog.hidden = true;
+            });
+            
+        });
+    
+    </script>
+</head>
+
+
+<body>
+    <div hidden>
+        <ui-section id="tier0" class="plan" label="Nano">
+            <p><span class="currency">$</span><span class="price"></span></p>
+            <div class="billed">
+                <div><span>per month billed</span></div>							
+            </div>
+            <div class="description">
+                <p><span class="storage"></span> storage</p>
+                <p><span class="bandwidth"></span> bandwidth/month</p>
+            </div>
+            <footer>
+                <p>Current Plan</p>
+                <button class="vx-primary">Select</button>
+            </footer>
+        </ui-section>
+        <ui-section id="tier1" class="plan" label="Micro">
+            <p><span class="currency">$</span><span class="price"></span></p>
+            <div class="billed">
+                <div><span>per month billed</span></div>							
+            </div>
+            <div class="description">
+                <p><span class="storage"></span> storage</p>
+                <p><span class="bandwidth"></span> bandwidth/month</p>
+            </div>
+            <footer>
+                <p>Current Plan</p>
+                <button class="vx-primary">Select</button>
+            </footer>
+        </ui-section>
+        <ui-section id="tier2" class="plan" label="Mega">
+            <p><span class="currency">$</span><span class="price"></span></p>
+            <div class="billed">
+                <div><span>per month billed</span></div>							
+            </div>
+            <div class="description">
+                <p><span class="storage"></span> storage</p>
+                <p><span class="bandwidth"></span> bandwidth/month</p>
+            </div>
+            <footer>
+                <p>Current Plan</p>
+                <button class="vx-primary">Select</button>
+            </footer>
+        </ui-section>
+        
+        <ui-section id="usage" label="Usage">
+            <va-utilization meter='{{{meter}}}'></va-utilization>
+        </ui-section>
+        
+        <ui-section id="card" label="Payment">
+            <va-card {{#card}}card='{{{card}}}'{{/card}} key="{{{stripekey}}}" token="{{{token}}}">
+                <div id="payment-card"></div>
+            </va-card>
+        </ui-section>
+    
+        <ui-modal id="waiting" hidden>
+            Please wait... 
+        </ui-modal>
+        
+        <ui-modal id="confirm" hidden>
+            <p>You are about to change your subscription. The change will take effect immediately. If you are downgrading the subscription, the remaining balance of this will be
+            credited toward future payments.</pl>
+            <div>
+                <button name='confirm'>Change</button>
+                <button name='cancel'>Cancel</button>
+            </div>  
+        </ui-modal>
+    
+    </div>
+    
+</body>
+
+</html>
